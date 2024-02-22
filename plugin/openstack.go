@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/coredns/coredns/plugin"
-	"github.com/rackspace/gophercloud"
-	"github.com/rackspace/gophercloud/openstack"
-	"github.com/rackspace/gophercloud/openstack/compute/v2/servers"
-	"github.com/rackspace/gophercloud/openstack/identity/v2/tenants"
-	"github.com/rackspace/gophercloud/pagination"
+	"github.com/gophercloud/gophercloud"
+	"github.com/gophercloud/gophercloud/openstack"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
+	"github.com/gophercloud/gophercloud/openstack/identity/v3/projects"
+	"github.com/gophercloud/gophercloud/pagination"
 )
 
 // DNSEntries represents a list of hostname assiociated with a list of IPs
@@ -39,12 +39,16 @@ func extractFloating(addresses map[string]interface{}) []string {
 func (os OpenStack) listTenants(provider *gophercloud.ProviderClient) (map[string]string, error) {
 	r := make(map[string]string)
 
-	client := openstack.NewIdentityV2(provider)
-	pager := tenants.List(client, nil)
-	err := pager.EachPage(func(page pagination.Page) (bool, error) {
-		tenantList, _ := tenants.ExtractTenants(page)
+	client, err := openstack.NewIdentityV3(provider, gophercloud.EndpointOpts{Region: os.Region})
+	if err != nil {
+		return nil, fmt.Errorf("Unable to fetch tenants: %s", err)
+	}
 
-		for _, t := range tenantList {
+	pager := projects.List(client, nil)
+	err = pager.EachPage(func(page pagination.Page) (bool, error) {
+		projectsList, _ := projects.ExtractProjects(page)
+
+		for _, t := range projectsList {
 			r[t.ID] = t.Name
 		}
 		return true, nil

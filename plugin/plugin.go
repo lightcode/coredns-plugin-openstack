@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/coredns/coredns/request"
+	"github.com/gophercloud/gophercloud"
 	"github.com/miekg/dns"
-	"github.com/rackspace/gophercloud"
 	"golang.org/x/net/context"
 )
 
