@@ -2,7 +2,10 @@ package plugin
 
 import (
 	"fmt"
+	"log"
+	"time"
 
+	"github.com/coredns/coredns/plugin"
 	"github.com/rackspace/gophercloud"
 	"github.com/rackspace/gophercloud/openstack"
 	"github.com/rackspace/gophercloud/openstack/compute/v2/servers"
@@ -19,7 +22,21 @@ type serverEntry struct {
 	Addresses  []string
 }
 
-func listTenants(provider *gophercloud.ProviderClient) (map[string]string, error) {
+func extractFloating(addresses map[string]interface{}) []string {
+	floatings := make([]string, 0)
+	for _, addrList := range addresses {
+		t := addrList.([]interface{})
+		for _, j := range t {
+			k := j.(map[string]interface{})
+			if k["OS-EXT-IPS:type"] == "floating" && k["version"].(float64) == 4 {
+				floatings = append(floatings, k["addr"].(string))
+			}
+		}
+	}
+	return floatings
+}
+
+func (os OpenStack) listTenants(provider *gophercloud.ProviderClient) (map[string]string, error) {
 	r := make(map[string]string)
 
 	client := openstack.NewIdentityV2(provider)
@@ -40,11 +57,11 @@ func listTenants(provider *gophercloud.ProviderClient) (map[string]string, error
 	return r, nil
 }
 
-func listServers(provider *gophercloud.ProviderClient, tenantMapping map[string]string, region string) ([]serverEntry, error) {
+func (os OpenStack) listServers(provider *gophercloud.ProviderClient, tenantMapping map[string]string) ([]serverEntry, error) {
 	serverEntries := make([]serverEntry, 0)
 
 	client, err := openstack.NewComputeV2(provider, gophercloud.EndpointOpts{
-		Region: region,
+		Region: os.Region,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("Unable to fetch servers: %s", err)
@@ -74,33 +91,19 @@ func listServers(provider *gophercloud.ProviderClient, tenantMapping map[string]
 	return serverEntries, nil
 }
 
-func extractFloating(addresses map[string]interface{}) []string {
-	floatings := make([]string, 0)
-	for _, addrList := range addresses {
-		t := addrList.([]interface{})
-		for _, j := range t {
-			k := j.(map[string]interface{})
-			if k["OS-EXT-IPS:type"] == "floating" && k["version"].(float64) == 4 {
-				floatings = append(floatings, k["addr"].(string))
-			}
-		}
-	}
-	return floatings
-}
-
-func fetchEntries(authOpts *gophercloud.AuthOptions, region string) (DNSEntries, error) {
-	provider, err := openstack.AuthenticatedClient(*authOpts)
+func (os OpenStack) fetchEntries() (DNSEntries, error) {
+	provider, err := openstack.AuthenticatedClient(*os.AuthOptions)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to authenticate: %s", err)
 	}
 
 	entries := make(DNSEntries)
-	mapping, err := listTenants(provider)
+	mapping, err := os.listTenants(provider)
 	if err != nil {
 		return nil, err
 	}
 
-	servers, err := listServers(provider, mapping, region)
+	servers, err := os.listServers(provider, mapping)
 	if err != nil {
 		return nil, err
 	}
@@ -111,4 +114,19 @@ func fetchEntries(authOpts *gophercloud.AuthOptions, region string) (DNSEntries,
 	}
 
 	return entries, nil
+}
+
+func (os OpenStack) runFetchEntries(globalEntries *DNSEntries) {
+	var err error
+	var entriesTemp DNSEntries
+
+	for {
+		entriesTemp, err = os.fetchEntries()
+		if err == nil {
+			*globalEntries = entriesTemp
+		} else {
+			log.Println(plugin.Error("openstack", err))
+		}
+		time.Sleep(time.Second)
+	}
 }

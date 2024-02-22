@@ -1,9 +1,6 @@
 package plugin
 
 import (
-	"log"
-	"time"
-
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin"
 	"github.com/mholt/caddy"
@@ -27,7 +24,7 @@ func setup(c *caddy.Controller) error {
 	os.Zone = config.Zone
 
 	c.OnStartup(func() error {
-		go runFetchEntries(os.Entries, os.AuthOptions, os.Region)
+		go os.runFetchEntries(os.Entries)
 		return nil
 	})
 
@@ -35,21 +32,6 @@ func setup(c *caddy.Controller) error {
 		return os
 	})
 	return nil
-}
-
-func runFetchEntries(globalEntries *DNSEntries, authOpts *gophercloud.AuthOptions, region string) {
-	var err error
-	var entriesTemp DNSEntries
-
-	for {
-		entriesTemp, err = fetchEntries(authOpts, region)
-		if err == nil {
-			*globalEntries = entriesTemp
-		} else {
-			log.Println(plugin.Error("openstack", err))
-		}
-		time.Sleep(time.Second)
-	}
 }
 
 func openstackParse(c *caddy.Controller) (*OpenStack, error) {
