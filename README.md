@@ -19,6 +19,7 @@ openstack {
     username USERNAME
     passwork PASSWORD
     domain_name DOMAIN_NAME
+    region REGION_NAME
 }
 ```
 
@@ -26,6 +27,7 @@ openstack {
 * `username` specifies the name of a user who can list tenants and list all servers. Defaults to `coredns`.
 * `password` specifies the password of the user. *Required*.
 * `domain_name` specifies the Keystone domain which the user belongs to. Defaults to `default`.
+* `region` specifies the OpenStack region for your servers. Defaults to `RegionOne`.
 
 
 ## Examples
@@ -37,6 +39,7 @@ openstack {
         username "coredns"
         passwork "SET HERE YOUR PASSWORD"
         domain_name "default"
+        region "RegionOne"
     }
     errors
     log

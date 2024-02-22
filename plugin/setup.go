@@ -27,7 +27,7 @@ func setup(c *caddy.Controller) error {
 	os.Zone = config.Zone
 
 	c.OnStartup(func() error {
-		go runFetchEntries(os.Entries, os.AuthOptions)
+		go runFetchEntries(os.Entries, os.AuthOptions, os.Region)
 		return nil
 	})
 
@@ -37,12 +37,12 @@ func setup(c *caddy.Controller) error {
 	return nil
 }
 
-func runFetchEntries(globalEntries *DNSEntries, authOpts *gophercloud.AuthOptions) {
+func runFetchEntries(globalEntries *DNSEntries, authOpts *gophercloud.AuthOptions, region string) {
 	var err error
 	var entriesTemp DNSEntries
 
 	for {
-		entriesTemp, err = fetchEntries(authOpts)
+		entriesTemp, err = fetchEntries(authOpts, region)
 		if err == nil {
 			*globalEntries = entriesTemp
 		} else {
@@ -59,7 +59,9 @@ func openstackParse(c *caddy.Controller) (*OpenStack, error) {
 		DomainName: "default",
 	}
 
-	os := OpenStack{}
+	os := OpenStack{
+		Region: "RegionOne",
+	}
 	os.Entries = &entries
 	os.AuthOptions = &authOpts
 
@@ -90,6 +92,12 @@ func openstackParse(c *caddy.Controller) (*OpenStack, error) {
 					return nil, c.ArgErr()
 				}
 				authOpts.DomainName = args[0]
+			case "region":
+				args := c.RemainingArgs()
+				if len(args) != 1 {
+					return nil, c.ArgErr()
+				}
+				os.Region = args[0]
 			default:
 				return nil, c.Errf("unknown property '%s'", c.Val())
 			}

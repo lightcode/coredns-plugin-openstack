@@ -40,11 +40,11 @@ func listTenants(provider *gophercloud.ProviderClient) (map[string]string, error
 	return r, nil
 }
 
-func listServers(provider *gophercloud.ProviderClient, tenantMapping map[string]string) ([]serverEntry, error) {
+func listServers(provider *gophercloud.ProviderClient, tenantMapping map[string]string, region string) ([]serverEntry, error) {
 	serverEntries := make([]serverEntry, 0)
 
 	client, err := openstack.NewComputeV2(provider, gophercloud.EndpointOpts{
-		Region: "RegionOne",
+		Region: region,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("Unable to fetch servers: %s", err)
@@ -88,7 +88,7 @@ func extractFloating(addresses map[string]interface{}) []string {
 	return floatings
 }
 
-func fetchEntries(authOpts *gophercloud.AuthOptions) (DNSEntries, error) {
+func fetchEntries(authOpts *gophercloud.AuthOptions, region string) (DNSEntries, error) {
 	provider, err := openstack.AuthenticatedClient(*authOpts)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to authenticate: %s", err)
@@ -100,7 +100,7 @@ func fetchEntries(authOpts *gophercloud.AuthOptions) (DNSEntries, error) {
 		return nil, err
 	}
 
-	servers, err := listServers(provider, mapping)
+	servers, err := listServers(provider, mapping, region)
 	if err != nil {
 		return nil, err
 	}

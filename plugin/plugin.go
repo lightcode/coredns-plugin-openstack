@@ -15,6 +15,7 @@ type OpenStack struct {
 	Zone        string
 	Entries     *DNSEntries
 	AuthOptions *gophercloud.AuthOptions
+	Region      string
 }
 
 // Name implements the plugin.Handler interface.
