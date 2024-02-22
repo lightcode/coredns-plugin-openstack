@@ -12,10 +12,11 @@ import (
 
 // OpenStack is a plugin to talk to an OpenStack API.
 type OpenStack struct {
-	Zone        string
-	Entries     *DNSEntries
-	AuthOptions *gophercloud.AuthOptions
-	Region      string
+	Zone           string
+	Entries        *DNSEntries
+	AuthOptions    *gophercloud.AuthOptions
+	Region         string
+	EnableWildcard bool
 }
 
 // Name implements the plugin.Handler interface.
@@ -40,10 +41,23 @@ func (os OpenStack) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.M
 		return 0, nil
 	}
 
-	qn := strings.TrimSuffix(state.QName(), os.Zone)
-	qn = strings.TrimSuffix(qn, ".")
+	qn := strings.TrimSuffix(state.QName(), "."+os.Zone)
+	var entry []string
 
-	if entry := (*os.Entries)[qn]; entry != nil {
+	if os.EnableWildcard {
+		parts := strings.Split(qn, ".")
+		for i := len(parts) - 2; i >= 0; i-- {
+			name := strings.Join(parts[i:len(parts)], ".")
+			if e := (*os.Entries)[name]; e != nil {
+				entry = e
+				continue
+			}
+		}
+	} else {
+		entry = (*os.Entries)[qn]
+	}
+
+	if entry != nil {
 		rr := new(dns.A)
 		rr.Hdr = dns.RR_Header{Name: state.QName(), Rrtype: dns.TypeA, Class: state.QClass()}
 		rr.A = net.ParseIP(entry[0]).To4()

@@ -42,7 +42,8 @@ func openstackParse(c *caddy.Controller) (*OpenStack, error) {
 	}
 
 	os := OpenStack{
-		Region: "RegionOne",
+		Region:         "RegionOne",
+		EnableWildcard: false,
 	}
 	os.Entries = &entries
 	os.AuthOptions = &authOpts
@@ -80,6 +81,12 @@ func openstackParse(c *caddy.Controller) (*OpenStack, error) {
 					return nil, c.ArgErr()
 				}
 				os.Region = args[0]
+			case "wildcard":
+				args := c.RemainingArgs()
+				if len(args) != 0 {
+					return nil, c.ArgErr()
+				}
+				os.EnableWildcard = true
 			default:
 				return nil, c.Errf("unknown property '%s'", c.Val())
 			}
