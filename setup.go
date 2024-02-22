@@ -1,10 +1,10 @@
 package plugin
 
 import (
+	"github.com/coredns/caddy"
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin"
 	"github.com/gophercloud/gophercloud"
-	"github.com/mholt/caddy"
 )
 
 func init() {
