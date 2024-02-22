@@ -1,15 +1,17 @@
+:warning: **This project is not maintained anymore.**
+
+---
+
 # openstack
 
 ## Name
 
-*openstack* - adds the ability to convert server names into their floating IPs.
-
+*openstack* — adds the ability to convert server names into their floating IPs.
 
 ## Description
 
-This plugin allows to resolve names build like `<server_name>.<project_name>` into the
+This plugin allows resolving names build like `<server_name>.<project_name>` into the
 corresponding floating IP.
-
 
 ## Syntax
 
@@ -29,8 +31,7 @@ openstack {
 * `password` specifies the password of the user. *Required*.
 * `domain_name` specifies the Keystone domain which the user belongs to. Defaults to `default`.
 * `region` specifies the OpenStack region for your servers. Defaults to `RegionOne`.
-* `wildcard` set this option to resolve every names that ends by `<server_name>.<project_name>`.
-
+* `wildcard` set this option to resolve every names that end by `<server_name>.<project_name>`.
 
 ## Examples
 
